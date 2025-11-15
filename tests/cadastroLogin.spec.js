@@ -1,46 +1,61 @@
 import { test, expect } from '@playwright/test';
 
-test.use({ headless: false });
-
 test('Cadastrar e logar com novo usuário', async ({ page }) => {
-  await page.goto('https://buggy.justtestit.org/register');
-  await page.waitForLoadState('networkidle');
-
-  await page.waitForTimeout(2000);
-
   // Gera nome de usuário único
   const timestamp = Date.now();
   const username = `carlos_teste_${timestamp}`;
   const senha = 'SenhaForte123!';
 
-  // Preenche cadastro
-  await page.locator('#username').fill(username);
-  await page.locator('#firstName').fill('Carlos');
-  await page.locator('#lastName').fill('Tratorzão');
-  await page.locator('#password').fill(senha);
-  await page.locator('#confirmPassword').fill(senha);
+  // Acessa a página de registro
+  await page.goto('https://buggy.justtestit.org/register');
+  await expect(page).toHaveURL(/.*register/);
+  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+  await page.waitForTimeout(1000); // só pra visualizar o scroll
 
-  await page.waitForTimeout(1000);
+  // Preenche o formulário de cadastro
+console.log(`[${timestamp}] Preenchendo campo de usuário`);
+await page.locator('#username').focus();
+await page.locator('#username').fill(username);
+await page.waitForTimeout(1000);
 
+console.log(`[${timestamp}] Preenchendo nome`);
+await page.locator('#firstName').focus();
+await page.locator('#firstName').fill('Carlos');
+await page.waitForTimeout(1000);
+
+console.log(`[${timestamp}] Preenchendo sobrenome`);
+await page.locator('#lastName').focus();
+await page.locator('#lastName').fill('Tratorzão');
+await page.waitForTimeout(1000);
+
+console.log(`[${timestamp}] Preenchendo senha`);
+await page.locator('#password').focus();
+await page.locator('#password').fill(senha);
+await page.waitForTimeout(1000);
+
+console.log(`[${timestamp}] Confirmando senha`);
+await page.locator('#confirmPassword').focus();
+await page.locator('#confirmPassword').fill(senha);
+await page.waitForTimeout(1000);
+  
+// Envia o formulário
   await page.getByRole('button', { name: 'Register' }).click();
 
-  await page.waitForTimeout(2000);
-
   // Valida mensagem de sucesso
-  const mensagem = await page.locator('.result').textContent();
-  await expect(mensagem?.trim()).toContain('Registration is successful');
+  const mensagem = page.locator('.result');
+  await expect(mensagem).toHaveText(/Registration is successful/);
 
-  await page.waitForTimeout(2000);
-
-  // Preenche login no topo da tela com escopo do header
-  const header = page.locator('nav'); // escopo do topo
+  // Login via header
+  const header = page.locator('nav');
+  console.log(`[${timestamp}] Confirmando usuário`);
   await header.locator('input[name="login"]').fill(username);
+  await page.waitForTimeout(2000);
+  console.log(`[${timestamp}] Confirmando senha`);
   await header.locator('input[name="password"]').fill(senha);
+  await page.waitForTimeout(2000);
   await header.getByRole('button', { name: 'Login' }).click();
 
-  await page.waitForTimeout(3000);
-
-  // Valida se login foi bem-sucedido
-  const saudacao = await page.locator('.nav-link').first().textContent();
-  await expect(saudacao).toContain('Hi, Carlos');
+  // Valida saudação após login
+  const saudacao = page.locator('.nav-link').first();
+  await expect(saudacao).toContainText('Hi, Carlos');
 });
